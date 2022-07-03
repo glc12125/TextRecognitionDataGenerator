@@ -44,6 +44,8 @@ def _generate_horizontal_text(
 ):
     image_font = ImageFont.truetype(font=font, size=font_size)
 
+    image_font_subscript = ImageFont.truetype(font=font, size=int(font_size*0.5))
+
     space_width = int(image_font.getsize(" ")[0] * space_width)
 
     if word_split:
@@ -55,14 +57,25 @@ def _generate_horizontal_text(
     else:
         splitted_text = text
 
-    piece_widths = [
-        image_font.getsize(p)[0] if p != " " else space_width for p in splitted_text
-    ]
+    #piece_widths = [
+    #    image_font.getsize(p)[0] if p != " " else space_width for p in splitted_text
+    #]
+    piece_widths = []
+    for p in splitted_text:
+        if p != " ":
+            if p.isnumeric():
+                piece_widths.append(image_font_subscript.getsize(p)[0])
+            else:
+                piece_widths.append(image_font.getsize(p)[0])
+        else:
+            piece_widths.append(space_width)
+
     text_width = sum(piece_widths)
     if not word_split:
         text_width += character_spacing * (len(text) - 1)
 
     text_height = max([image_font.getsize(p)[1] for p in splitted_text])
+    text_height_subscript = max([image_font_subscript.getsize(p)[1] for p in splitted_text])
 
     txt_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
     txt_mask = Image.new("RGB", (text_width, text_height), (0, 0, 0))
@@ -90,22 +103,41 @@ def _generate_horizontal_text(
     )
 
     for i, p in enumerate(splitted_text):
-        txt_img_draw.text(
-            (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
-            p,
-            fill=fill,
-            font=image_font,
-            stroke_width=stroke_width,
-            stroke_fill=stroke_fill,
-        )
-        txt_mask_draw.text(
-            (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
-            p,
-            fill=((i + 1) // (255 * 255), (i + 1) // 255, (i + 1) % 255),
-            font=image_font,
-            stroke_width=stroke_width,
-            stroke_fill=stroke_fill,
-        )
+        if p.isnumeric():
+            #print("{} is numeric".format(p))
+            txt_img_draw.text(
+                (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), text_height_subscript),
+                p,
+                fill=fill,
+                font=image_font_subscript,
+                stroke_width=stroke_width,
+                stroke_fill=stroke_fill,
+            )
+            txt_mask_draw.text(
+                (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), text_height_subscript),
+                p,
+                fill=((i + 1) // (255 * 255), (i + 1) // 255, (i + 1) % 255),
+                font=image_font_subscript,
+                stroke_width=stroke_width,
+                stroke_fill=stroke_fill,
+            )
+        else:
+            txt_img_draw.text(
+                (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
+                p,
+                fill=fill,
+                font=image_font,
+                stroke_width=stroke_width,
+                stroke_fill=stroke_fill,
+            )
+            txt_mask_draw.text(
+                (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
+                p,
+                fill=((i + 1) // (255 * 255), (i + 1) // 255, (i + 1) % 255),
+                font=image_font,
+                stroke_width=stroke_width,
+                stroke_fill=stroke_fill,
+            )
 
     if fit:
         return txt_img.crop(txt_img.getbbox()), txt_mask.crop(txt_img.getbbox())
