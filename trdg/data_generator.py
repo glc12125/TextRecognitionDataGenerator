@@ -130,6 +130,7 @@ class FakeTextDataGenerator(object):
                 distorted_img.size[0]
                 * (float(size - vertical_margin) / float(distorted_img.size[1]))
             )
+            print("new_width: {}, size - vertical_margin: {}".format(new_width, size - vertical_margin))
             resized_img = distorted_img.resize(
                 (new_width, size - vertical_margin), Image.ANTIALIAS
             )

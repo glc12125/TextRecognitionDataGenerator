@@ -339,6 +339,14 @@ def parse_arguments():
         help="Define the image mode to be used. RGB is default, L means 8-bit grayscale images, 1 means 1-bit binary images stored with one pixel per byte, etc.",
         default="RGB",
     )
+    parser.add_argument(
+        "-si",
+        "--start_index",
+        type=int,
+        nargs="?",
+        help="The starting index of the labels.",
+        default=0,
+    )
     return parser.parse_args()
 
 
@@ -433,7 +441,7 @@ def main():
         p.imap_unordered(
             FakeTextDataGenerator.generate_from_tuple,
             zip(
-                [i for i in range(0, string_count)],
+                [i + args.start_index for i in range(0, string_count)],
                 strings,
                 [fonts[rnd.randrange(0, len(fonts))] for _ in range(0, string_count)],
                 [args.output_dir] * string_count,
@@ -472,15 +480,28 @@ def main():
 
     if args.name_format == 2:
         # Create file with filename-to-label connections
-        with open(
-            os.path.join(args.output_dir, "labels.txt"), "w", encoding="utf8"
-        ) as f:
-            for i in range(string_count):
-                file_name = str(i) + "." + args.extension
-                label = strings[i]
-                if args.space_width == 0:
-                    label = label.replace(" ", "")
-                f.write("{} {}\n".format(file_name, label))
+        label_file_apth = os.path.join(args.output_dir, "labels.csv")
+        if os.path.exists(label_file_apth):
+            with open(
+                os.path.join(args.output_dir, "labels.csv"), "a", encoding="utf8"
+            ) as f:
+                for i in range(string_count):
+                    file_name = str(i+args.start_index) + "." + args.extension
+                    label = strings[i]
+                    if args.space_width == 0:
+                        label = label.replace(" ", "")
+                    f.write("{},{}\n".format(file_name, label))
+        else:
+            with open(
+                os.path.join(args.output_dir, "labels.csv"), "w", encoding="utf8"
+            ) as f:
+                f.write("filename,words\n")
+                for i in range(string_count):
+                    file_name = str(i+args.start_index) + "." + args.extension
+                    label = strings[i]
+                    if args.space_width == 0:
+                        label = label.replace(" ", "")
+                    f.write("{},{}\n".format(file_name, label))
 
 
 if __name__ == "__main__":
